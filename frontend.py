@@ -2,18 +2,14 @@ import streamlit as st
 import base64
 from predict import predict_risk
 
-# -------------------
 # Page config
-# -------------------
 st.set_page_config(
     page_title="Home Investment Guide",
     page_icon="🏠",
     layout="centered",
 )
 
-# -------------------
 # Helper: load image
-# -------------------
 @st.cache_data
 def get_image_base64(path):
     with open(path, "rb") as image_file:
@@ -21,9 +17,7 @@ def get_image_base64(path):
 
 bg_image = get_image_base64("hq720.jpg")
 
-# -------------------
 # Custom styling
-# -------------------
 st.markdown(
     f"""
     <style>
@@ -42,27 +36,47 @@ st.markdown(
     [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] {{
         backdrop-filter: blur(2px);
     }}
-    .risk-low  {{ background-color: #d4edda; color: #155724; }}
-    .risk-med  {{ background-color: #fff3cd; color: #856404; }}
-    .risk-high {{ background-color: #f8d7da; color: #721c24; }}
+    .risk-low  {{ background-color: #007f33; color: #ffffff; }}
+    .risk-med  {{ background-color: #cca300; color: #000000; }}
+    .risk-high {{ background-color: #b30000; color: #ffffff; }}
     .risk-pct  {{ font-size: 2.4rem; font-weight: 700; }}
     .prob-bar  {{ display: flex; gap: .5rem; margin-top: 1rem; }}
     .prob-item {{ flex: 1; padding: .6rem; border-radius: 8px; text-align: center; font-size: .85rem; }}
+    div[data-testid="stNumberInput"] label {{
+        color: black !important;
+        font-weight: 600;
+        font-size: 1rem; 
+    }}
+    div[data-testid="stForm"] label[for="Select your perspective"] {{
+        color: black !important;
+        font-weight: 600;
+        margin-bottom: 0.1rem;
+        font-size: 1rem;
+    }}
+    div[data-testid="stSelectbox"] {{
+        margin-top: 0.1rem !important;
+        margin-bottom: 0.3rem !important;
+    }}
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# -------------------
 # Header
-# -------------------
-st.title("Home Investment Analyzer")
-st.caption("Assess the investment risk of a property based on local migration trends.")
+st.markdown('<h1 style="color:black;">Home Investment Analyzer</h1>', unsafe_allow_html=True)
+st.markdown('<p style="color:black;">Assess the investment risk of a property based on local migration trends.</p>', unsafe_allow_html=True)
 st.divider()
 
-# -------------------
+# Mode selection
+mode = st.selectbox(
+    "Select your perspective",
+    options=["First-time Buyer", "City Council Member", "Investor"],
+    help="Choose the perspective you want the analysis for."
+)
+st.markdown(f"<p style='color:black; font-weight:600; margin-top:0.2rem;'>Selected Mode: {mode}</p>", unsafe_allow_html=True)
+st.divider()
+
 # Inputs
-# -------------------
 col1, col2 = st.columns(2)
 
 with col1:
@@ -107,16 +121,12 @@ with col4:
 
 st.divider()
 
-# -------------------
 # Predict & Display
-# -------------------
 if st.button("Calculate Risk", type="primary", use_container_width=True):
     result = predict_risk(low_price, high_price, moves_in, moves_out)
-
-    probs = result["probabilities"]  # [low, medium, high]
+    probs = result["probabilities"]  
     risk_pct = round(result["risk_pct"], 1)
 
-    # Determine overall buying advice
     if risk_pct < 33:
         css_class = "risk-low"
         status_text = "Safe to buy"
@@ -130,9 +140,7 @@ if st.button("Calculate Risk", type="primary", use_container_width=True):
         status_text = "Too risky to buy"
         recommendation = "High risk of value decline. Consider looking elsewhere."
 
-    # -------------------
     # Main risk box
-    # -------------------
     st.markdown(
         f"""
         <div class="risk-box {css_class}">
@@ -146,9 +154,7 @@ if st.button("Calculate Risk", type="primary", use_container_width=True):
         unsafe_allow_html=True,
     )
 
-    # -------------------
     # Risk breakdown with check mark
-    # -------------------
     highest_idx = probs.index(max(probs))
     risk_labels = ["Low Risk", "Medium Risk", "High Risk"]
     css_classes = ["risk-low", "risk-med", "risk-high"]
@@ -170,8 +176,6 @@ if st.button("Calculate Risk", type="primary", use_container_width=True):
 
     st.caption(f"Model prediction: **{result['risk']}**")
 
-# -------------------
 # Footer
-# -------------------
 st.divider()
-st.caption("Analysis based on historical migration patterns and local market indicators.")
+st.markdown('<p style="color:green;">Analysis based on historical migration patterns and local market indicators.</p>', unsafe_allow_html=True)
