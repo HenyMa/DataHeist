@@ -13,17 +13,14 @@ def predict_risk(low_price, high_price, move_in, move_out):
     - High property value relative to median = Higher risk (more to lose)
     """
     avg_price = (low_price + high_price) / 2
-    net_flow = move_in - move_out
 
     median_price = 1216000
     relative_price = avg_price / median_price
 
     total_moves = move_in + move_out
     if total_moves > 0:
-        pct_move_in = move_in / total_moves
         pct_leave = move_out / total_moves
     else:
-        pct_move_in = 0.0
         pct_leave = 0.0
 
     migration_risk = pct_leave * 50  # Max 50 points when 100% leave
