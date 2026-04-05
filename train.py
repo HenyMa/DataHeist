@@ -15,7 +15,6 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay,
 )
 import matplotlib.pyplot as plt
-import numpy as np
 
 from preprocess import preprocess
 
@@ -114,12 +113,3 @@ print("=" * 60)
 
 with open("risk_model.pkl", "wb") as file:
     pickle.dump(best_model, file)
-
-class_labels = sorted(y.unique())
-cm = confusion_matrix(y_test, best_test_predictions, labels=class_labels)
-disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_labels)
-disp.plot(cmap="Blues")
-plt.xlabel("Predicted label")
-plt.ylabel("True label")
-plt.title(f"{best_model_name} Confusion Matrix (Test Set)")
-plt.show()
