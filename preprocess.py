@@ -49,9 +49,9 @@ def create_risk_labels(df):
     for i in range(len(df)):
         leave = df.loc[i, 'PctLeave']
 
-        if leave < 0.30:
+        if leave < 0.33:
             risk = 0   # Low Risk - stable population
-        elif leave < 0.55:
+        elif leave < 0.67:
             risk = 1   # Medium Risk - some outflow
         else:
             risk = 2   # High Risk - significant outflow
