@@ -36,9 +36,9 @@ st.markdown(
     [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] {{
         backdrop-filter: blur(2px);
     }}
-    .risk-low  {{ background-color: #007f33; color: #ffffff; }}
-    .risk-med  {{ background-color: #cca300; color: #000000; }}
-    .risk-high {{ background-color: #b30000; color: #ffffff; }}
+    .risk-low  {{ background-color: #186B3B; color: #ffffff; }}
+    .risk-med  {{ background-color: #A36F07; color: #000000; }}
+    .risk-high {{ background-color: #8F0303; color: #ffffff; }}
     .risk-pct  {{ font-size: 2.4rem; font-weight: 700; }}
     .prob-bar  {{ display: flex; gap: .5rem; margin-top: 1rem; }}
     .prob-item {{ flex: 1; padding: .6rem; border-radius: 8px; text-align: center; font-size: .85rem; }}
@@ -57,6 +57,20 @@ st.markdown(
         margin-top: 0.1rem !important;
         margin-bottom: 0.3rem !important;
     }}
+    div[data-testid="stButton"] > button[kind="primary"] {{
+        background-color: #1a6bbf !important;
+        border-color: #1a6bbf !important;
+        color: #ffffff !important;
+    }}
+    div[data-testid="stButton"] > button[kind="primary"]:hover {{
+        background-color: #155a9e !important;
+        border-color: #155a9e !important;
+    }}
+    div[data-testid="stNumberInput"] input,
+    div[data-testid="stSelectbox"] > div > div,
+    div[data-testid="stSelectbox"] > div > div > div {{
+        border-radius: 0 !important;
+    }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -64,14 +78,14 @@ st.markdown(
 
 # Header
 st.markdown('<h1 style="color:black;">Home Investment Analyzer</h1>', unsafe_allow_html=True)
-st.markdown('<p style="color:black;">Assess the investment risk of a property based on local migration trends.</p>', unsafe_allow_html=True)
+st.markdown('<p style="color:black;">Assess the investment risk of a property based on local migration and price trends</p>', unsafe_allow_html=True)
 st.divider()
 
 # Mode selection
 mode = st.selectbox(
     "Select your perspective",
     options=["First-time Buyer", "City Council Member", "Investor"],
-    help="Choose the perspective you want the analysis for."
+    help="Choose the perspective you want the analysis for"
 )
 st.markdown(f"<p style='color:black; font-weight:600; margin-top:0.2rem;'>Selected Mode: {mode}</p>", unsafe_allow_html=True)
 st.divider()
@@ -86,7 +100,7 @@ with col1:
         value=500000.0,
         step=1000.0,
         format="%.2f",
-        help="Upper bound of the local housing price range.",
+        help="Upper bound of the local housing price range",
     )
 
 with col2:
@@ -96,7 +110,7 @@ with col2:
         value=250000.0,
         step=1000.0,
         format="%.2f",
-        help="Lower bound of the local housing price range.",
+        help="Lower bound of the local housing price range",
     )
 
 col3, col4 = st.columns(2)
@@ -107,7 +121,7 @@ with col3:
         min_value=0,
         value=1200,
         step=1,
-        help="Number of residents who moved out of the area.",
+        help="Number of residents who moved out of the area",
     )
 
 with col4:
@@ -127,18 +141,34 @@ if st.button("Calculate Risk", type="primary", use_container_width=True):
     probs = result["probabilities"]  
     risk_pct = round(result["risk_pct"], 1)
 
+    if mode == "First-time Buyer":
+        low_label, med_label, high_label = "Buy now!", "Moderate (be cautious)", "Too risky (consider renting)"
+        low_rec = "This neighborhood looks chill AF. A great place to hang it up!"
+        med_rec = "The market here is mixed. Make sure you can handle potential fluctuations before committing."
+        high_rec = "Prices and population trends suggest instability. Renting may be a smarter move right now."
+    elif mode == "City Council Member":
+        low_label, med_label, high_label = "Keep up the good work, big dawg!", "Monitor", "Urgent intervention"
+        low_rec = "This area is lit AF rn. Current policies appear to be working well!"
+        med_rec = "Some warning signs in migration and pricing. Keep a close eye and be ready to act."
+        high_rec = "Significant population outflow and market stress detected. Immediate policy action is needed."
+    else:  # Investor
+        low_label, med_label, high_label = "Invest", "Look out", "Avoid"
+        low_rec = "Strong demand and favorable migration trends. INVEST in this place rn!"
+        med_rec = "Mixed signals in the market. Proceed carefully and hedge your exposure."
+        high_rec = "High risk of value decline with weak demand. Capital is better deployed elsewhere."
+
     if risk_pct < 33:
         css_class = "risk-low"
-        status_text = "Safe to buy"
-        recommendation = "This appears to be a solid investment opportunity."
+        status_text = low_label
+        recommendation = low_rec
     elif risk_pct < 67:
         css_class = "risk-med"
-        status_text = "Caution advised"
-        recommendation = "Proceed with caution. Consider further research."
+        status_text = med_label
+        recommendation = med_rec
     else:
         css_class = "risk-high"
-        status_text = "Too risky to buy"
-        recommendation = "High risk of value decline. Consider looking elsewhere."
+        status_text = high_label
+        recommendation = high_rec
 
     # Main risk box
     st.markdown(
@@ -178,4 +208,4 @@ if st.button("Calculate Risk", type="primary", use_container_width=True):
 
 # Footer
 st.divider()
-st.markdown('<p style="color:green;">Analysis based on historical migration patterns and local market indicators.</p>', unsafe_allow_html=True)
+st.markdown('<p style="color:blue;">Analysis based on historical migration patterns and local market indicators. Big thanks to Melissa for the datasets! Take caution with these predictions ofc...</p>', unsafe_allow_html=True)
