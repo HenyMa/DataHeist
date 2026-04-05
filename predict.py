@@ -4,29 +4,52 @@ with open("risk_model.pkl", "rb") as f:
     model = pickle.load(f)
 
 def predict_risk(low_price, high_price, move_in, move_out):
+    """
+    Predict home buying risk based on price and migration patterns.
+    
+    Risk factors:
+    - High out-migration rate = Higher risk
+    - Low property value relative to median = Lower risk (cheaper to buy)
+    - High property value relative to median = Higher risk (more to lose)
+    """
     avg_price = (low_price + high_price) / 2
     net_flow = move_in - move_out
 
     median_price = 1216000
     relative_price = avg_price / median_price
 
-    input_data = [[avg_price, move_out, move_in, net_flow, relative_price]]
+    total_moves = move_in + move_out
+    if total_moves > 0:
+        pct_move_in = move_in / total_moves
+        pct_leave = move_out / total_moves
+    else:
+        pct_move_in = 0.0
+        pct_leave = 0.0
 
-    prediction = model.predict(input_data)[0]
-    probability = model.predict_proba(input_data)[0]
+    migration_risk = pct_leave * 50  # Max 50 points when 100% leave
 
-    risk_map = {
-        0: "Low Risk",
-        1: "Medium Risk",
-        2: "High Risk"
-    }
+    price_risk = min(relative_price * 50, 50)  # Max 50 points
+    
+    risk_score = migration_risk + price_risk
+    risk_score = min(100.0, max(0.0, risk_score))  # Clamp to 0-100
+
+    if risk_score < 33:
+        risk_label = "Low Risk"
+        full_probs = [1.0, 0.0, 0.0]
+    elif risk_score < 67:
+        risk_label = "Medium Risk"
+        full_probs = [0.0, 1.0, 0.0]
+    else:
+        risk_label = "High Risk"
+        full_probs = [0.0, 0.0, 1.0]
 
     return {
-        "risk": risk_map[prediction],
-        "probabilities": probability.tolist()
+        "risk": risk_label,
+        "probabilities": full_probs,
+        "risk_pct": round(risk_score, 1)
     }
 
 # Test
 if __name__ == "__main__":
-    result = predict_risk(500000, 800000, 0.3, 0.5)
+    result = predict_risk(500000, 800000, 1000, 1200)
     print(result)

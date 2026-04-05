@@ -1,74 +1,57 @@
 import streamlit as st
-import pickle
-import os
-import pandas as pd
-
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "risk_model.pkl")
-
-@st.cache_resource
-def load_model():
-    with open(MODEL_PATH, "rb") as f:
-        return pickle.load(f)
-
-model = load_model()
-
-
-def predict_risk(low_price, high_price, move_in, move_out):
-    avg_price = (low_price + high_price) / 2
-    net_flow = move_in - move_out
-
-    median_price = 1_216_000
-    relative_price = avg_price / median_price
-
-    input_data = pd.DataFrame(
-        [[avg_price, move_out, move_in, net_flow, relative_price]],
-        columns=["PropertyValue", "PctLeave", "PctMoveIn", "NetFlow", "RelativePrice"],
-    )
-
-    prediction = model.predict(input_data)[0]
-    probability = model.predict_proba(input_data)[0]
-
-    risk_map = {0: "Low Risk", 1: "Medium Risk", 2: "High Risk"}
-
-    return {
-        "label": risk_map[prediction],
-        "prediction": int(prediction),
-        "probabilities": probability.tolist(),  # [low, medium, high]
-    }
+import base64
+from predict import predict_risk
 
 
 # Page config
 st.set_page_config(
-    page_title="Migration Risk Estimator",
-    page_icon="M",
+    page_title="Home Investment Guide",
+    page_icon="🏠",
     layout="centered",
 )
 
+
+@st.cache_data
+def get_image_base64(path):
+    with open(path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode("utf-8")
+
+
+bg_image = get_image_base64("hq720.jpg")
+
 # Custom styling
 st.markdown(
-    """
+    f"""
     <style>
-    .block-container { max-width: 640px; padding-top: 2rem; }
-    .risk-box {
+    .stApp {{
+        background: linear-gradient(rgba(245, 247, 250, 0.72), rgba(245, 247, 250, 0.72)),
+                    url("data:image/jpeg;base64,{bg_image}") center / cover fixed no-repeat;
+    }}
+    .block-container {{ max-width: 640px; padding-top: 2rem; }}
+    .risk-box {{
         padding: 1.5rem 2rem;
         border-radius: 12px;
         text-align: center;
         margin-top: 1rem;
-    }
-    .risk-low  { background-color: #d4edda; color: #155724; }
-    .risk-med  { background-color: #fff3cd; color: #856404; }
-    .risk-high { background-color: #f8d7da; color: #721c24; }
-    .risk-pct  { font-size: 2.4rem; font-weight: 700; }
-    .prob-bar  { display: flex; gap: .5rem; margin-top: 1rem; }
-    .prob-item { flex: 1; padding: .6rem; border-radius: 8px; text-align: center; font-size: .85rem; }
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }}
+    [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] {{
+        backdrop-filter: blur(2px);
+    }}
+    .risk-low  {{ background-color: #d4edda; color: #155724; }}
+    .risk-med  {{ background-color: #fff3cd; color: #856404; }}
+    .risk-high {{ background-color: #f8d7da; color: #721c24; }}
+    .risk-pct  {{ font-size: 2.4rem; font-weight: 700; }}
+    .prob-bar  {{ display: flex; gap: .5rem; margin-top: 1rem; }}
+    .prob-item {{ flex: 1; padding: .6rem; border-radius: 8px; text-align: center; font-size: .85rem; }}
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 # Header
-st.title("Migration Risk Estimator")
-st.caption("Estimate the probability of net out-migration for the coming year.")
+st.title("Home Investment Analyzer")
+st.caption("Assess the investment risk of a property based on local migration trends.")
 
 st.divider()
 
@@ -121,27 +104,30 @@ st.divider()
 if st.button("Calculate Risk", type="primary", use_container_width=True):
     result = predict_risk(low_price, high_price, moves_in, moves_out)
 
-    probs = result["probabilities"]  # [low, medium, high]
-    # Risk of net out-migration = medium + high probability
-    risk_pct = round((probs[1] + probs[2]) * 100, 1)
+    probs = result["probabilities"]
+    risk_pct = round(result["risk_pct"], 1)
 
-    if result["prediction"] == 0:
+    # Base recommendation on the actual buying risk percentage, not the prediction
+    if risk_pct < 33:
         css_class = "risk-low"
-        status_text = "Low risk"
-    elif result["prediction"] == 1:
+        status_text = "Safe to buy"
+        recommendation = "This appears to be a solid investment opportunity."
+    elif risk_pct < 67:
         css_class = "risk-med"
-        status_text = "Moderate risk"
+        status_text = "Caution advised"
+        recommendation = "Proceed with caution. Consider further research."
     else:
         css_class = "risk-high"
-        status_text = "High risk"
+        status_text = "Too risky to buy"
+        recommendation = "High risk of value decline. Consider looking elsewhere."
 
     st.markdown(
         f"""
         <div class="risk-box {css_class}">
             <div style="font-size:1rem; font-weight:600; letter-spacing:.02em;">{status_text}</div>
             <div class="risk-pct">{risk_pct}%</div>
-            <div style="margin-top:.4rem; font-size:1.1rem;">
-                You have a <strong>{risk_pct}%</strong> risk of net out-migration next year.
+            <div style="margin-top:.4rem; font-size:1rem;">
+                {recommendation}
             </div>
         </div>
         """,
@@ -166,8 +152,8 @@ if st.button("Calculate Risk", type="primary", use_container_width=True):
         unsafe_allow_html=True,
     )
 
-    st.caption(f"Model prediction: **{result['label']}**")
+    st.caption(f"Model prediction: **{result['risk']}**")
 
 # Footer
 st.divider()
-st.caption("Powered by a Random Forest classifier trained on OC migration data.")
+st.caption("Analysis based on historical migration patterns and local market indicators.")
