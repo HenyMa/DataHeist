@@ -2,24 +2,28 @@ import streamlit as st
 import base64
 from predict import predict_risk
 
-
+# -------------------
 # Page config
+# -------------------
 st.set_page_config(
     page_title="Home Investment Guide",
     page_icon="🏠",
     layout="centered",
 )
 
-
+# -------------------
+# Helper: load image
+# -------------------
 @st.cache_data
 def get_image_base64(path):
     with open(path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
-
 bg_image = get_image_base64("hq720.jpg")
 
+# -------------------
 # Custom styling
+# -------------------
 st.markdown(
     f"""
     <style>
@@ -49,13 +53,16 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# -------------------
 # Header
+# -------------------
 st.title("Home Investment Analyzer")
 st.caption("Assess the investment risk of a property based on local migration trends.")
-
 st.divider()
 
+# -------------------
 # Inputs
+# -------------------
 col1, col2 = st.columns(2)
 
 with col1:
@@ -100,14 +107,16 @@ with col4:
 
 st.divider()
 
-# Predict
+# -------------------
+# Predict & Display
+# -------------------
 if st.button("Calculate Risk", type="primary", use_container_width=True):
     result = predict_risk(low_price, high_price, moves_in, moves_out)
 
-    probs = result["probabilities"]
+    probs = result["probabilities"]  # [low, medium, high]
     risk_pct = round(result["risk_pct"], 1)
 
-    # Base recommendation on the actual buying risk percentage, not the prediction
+    # Determine overall buying advice
     if risk_pct < 33:
         css_class = "risk-low"
         status_text = "Safe to buy"
@@ -121,6 +130,9 @@ if st.button("Calculate Risk", type="primary", use_container_width=True):
         status_text = "Too risky to buy"
         recommendation = "High risk of value decline. Consider looking elsewhere."
 
+    # -------------------
+    # Main risk box
+    # -------------------
     st.markdown(
         f"""
         <div class="risk-box {css_class}">
@@ -134,19 +146,23 @@ if st.button("Calculate Risk", type="primary", use_container_width=True):
         unsafe_allow_html=True,
     )
 
-    # Breakdown
+    # -------------------
+    # Risk breakdown with check mark
+    # -------------------
+    highest_idx = probs.index(max(probs))
+    risk_labels = ["Low Risk", "Medium Risk", "High Risk"]
+    css_classes = ["risk-low", "risk-med", "risk-high"]
+
     st.markdown(
         f"""
         <div class="prob-bar">
-            <div class="prob-item risk-low">
-                <strong>Low</strong><br>{round(probs[0]*100, 1)}%
-            </div>
-            <div class="prob-item risk-med">
-                <strong>Medium</strong><br>{round(probs[1]*100, 1)}%
-            </div>
-            <div class="prob-item risk-high">
-                <strong>High</strong><br>{round(probs[2]*100, 1)}%
-            </div>
+            {"".join([
+                f'<div class="prob-item {css_classes[i]}">'
+                f'<strong>{risk_labels[i]}</strong><br>'
+                f'{"✔️" if i == highest_idx else ""}'
+                f'</div>'
+                for i in range(3)
+            ])}
         </div>
         """,
         unsafe_allow_html=True,
@@ -154,6 +170,8 @@ if st.button("Calculate Risk", type="primary", use_container_width=True):
 
     st.caption(f"Model prediction: **{result['risk']}**")
 
+# -------------------
 # Footer
+# -------------------
 st.divider()
 st.caption("Analysis based on historical migration patterns and local market indicators.")
