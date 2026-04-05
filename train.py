@@ -1,4 +1,3 @@
-import pandas as pd
 import pickle
 
 from sklearn.model_selection import train_test_split, cross_validate
@@ -11,10 +10,7 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
     f1_score,
-    confusion_matrix,
-    ConfusionMatrixDisplay,
 )
-import matplotlib.pyplot as plt
 
 from preprocess import preprocess
 
