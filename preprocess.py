@@ -6,7 +6,6 @@ def load_data(path):
 
 
 def normalize_schema(df):
-    # Build canonical model columns from alternate input schemas.
     if 'PropertyValue' not in df.columns:
         if {'LowValue', 'HighValue'}.issubset(df.columns):
             df['PropertyValue'] = (df['LowValue'] + df['HighValue']) / 2
@@ -25,7 +24,6 @@ def normalize_schema(df):
         else:
             raise KeyError("Missing PctLeave (or MoveOut)")
 
-    # If move-in/leave are raw counts, convert to rates so thresholds stay meaningful.
     if df['PctMoveIn'].max() > 1 or df['PctLeave'].max() > 1:
         total = (df['PctMoveIn'] + df['PctLeave']).replace(0, pd.NA)
         df['PctMoveIn'] = (df['PctMoveIn'] / total).fillna(0)
@@ -45,20 +43,18 @@ def add_features(df):
 
 
 def create_risk_labels(df):
-    median_price = df['PropertyValue'].median()
     
     risk_list = []
     
     for i in range(len(df)):
-        price = df.loc[i, 'PropertyValue']
         leave = df.loc[i, 'PctLeave']
-        
-        if leave > 0.6 and price > median_price:
-            risk = 2   # High Risk
-        elif leave > 0.4:
-            risk = 1   # Medium Risk
+
+        if leave < 0.30:
+            risk = 0   # Low Risk - stable population
+        elif leave < 0.55:
+            risk = 1   # Medium Risk - some outflow
         else:
-            risk = 0   # Low Risk
+            risk = 2   # High Risk - significant outflow
         
         risk_list.append(risk)
     
